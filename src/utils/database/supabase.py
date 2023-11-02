@@ -156,7 +156,7 @@ class SupabaseDatabase(DatabaseProviderSingleton):
 
         except Exception as e:
             print_to_console(
-                f"Supabase Error",
+                "Supabase Error",
                 LogColor.ERROR,
                 "Either there was an issue with your database connection or the tables do not exist. Please check your database connection and try again.",
             )

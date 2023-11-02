@@ -39,7 +39,4 @@ def parse_array(s: str) -> np.ndarray:
     # Split the string by comma
     elements = s.strip()[1:-1].split(",")
 
-    # Convert each element to a float and create a NumPy array
-    arr = np.array([float(e) for e in elements])
-
-    return arr
+    return np.array([float(e) for e in elements])

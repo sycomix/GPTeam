@@ -11,8 +11,7 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
 
-    similarity = dot_product / (norm_a * norm_b)
-    return similarity
+    return dot_product / (norm_a * norm_b)
 
 
 async def get_embedding(text: str, model="text-embedding-ada-002", max_retries=3) -> np.ndarray:

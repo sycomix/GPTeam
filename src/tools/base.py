@@ -81,10 +81,7 @@ class CustomTool(Tool):
             input = agent_input
 
         try:
-            if self.coroutine:
-                return await super().arun(input)
-            else:
-                return super().run(input)
+            return await super().arun(input) if self.coroutine else super().run(input)
         except Exception as e:
             return f"Error: {e}"
 
@@ -120,7 +117,7 @@ class CustomTool(Tool):
             tool_usage_reflection=tool_usage_reflection,
             recipient_full_name=(
                 tool_input.split(";")[0]
-                if len(tool_input.split(";")) > 0
+                if tool_input.split(";")
                 else "a colleague"
             )
             if self.name == ToolName.SPEAK.value

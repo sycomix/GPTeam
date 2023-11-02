@@ -124,7 +124,7 @@ class SinglePlan(BaseModel):
         return await (await get_database()).get_by_id(Tables.Plan, str(self.id))
 
     def _db_dict(self):
-        row = {
+        return {
             "id": str(self.id),
             "description": self.description,
             "location_id": str(self.location.id),
@@ -141,8 +141,6 @@ class SinglePlan(BaseModel):
             if self.completed_at
             else None,
         }
-
-        return row
 
     def make_plan_prompt(self):
         return f"\nDo this: {self.description}\nAt this location: {self.location.name}\nStop when this happens: {self.stop_condition}\nIf do not finish within {self.max_duration_hrs} hours, stop."

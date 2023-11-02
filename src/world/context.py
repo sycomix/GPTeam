@@ -39,15 +39,11 @@ class WorldContext(BaseModel):
             events_manager=events_manager,
         )
 
-    async def from_data(
-        agents: dict,
-        locations: dict,
-        world: WorldData,
-    ):
+    async def from_data(self, locations: dict, world: WorldData):
         events_manager = await EventsManager.from_world_id(world.id)
 
         return WorldContext(
-            agents=agents,
+            self=self,
             locations=locations,
             world=world,
             events_manager=events_manager,
@@ -87,7 +83,7 @@ class WorldContext(BaseModel):
         return agent
 
     def get_agents_at_location(self, location_id: str) -> list[dict]:
-        return [a for a in self.agents if str(a["location_id"]) == str(location_id)]
+        return [a for a in self.agents if str(a["location_id"]) == location_id]
 
     def get_location_from_agent_id(self, agent_id: UUID | str) -> dict:
         agent = self.get_agent_dict_from_id(agent_id)

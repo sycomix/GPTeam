@@ -16,5 +16,4 @@ class UserInputTool(Tool):
     @staticmethod
     def get_user_input(question):
         print_to_console("\nQuestion", LogColor.CLI_INPUT, question)
-        i = input()
-        return i
+        return input()

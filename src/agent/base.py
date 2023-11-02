@@ -128,13 +128,15 @@ class Agent(BaseModel):
 
     def __str__(self) -> str:
         private_bio = (
-            self.private_bio[:100] + "..."
+            f"{self.private_bio[:100]}..."
             if len(self.private_bio) > 100
             else self.private_bio
         )
         memories = " " + "\n ".join(
             [
-                str(memory)[:100] + "..." if len(str(memory)) > 100 else str(memory)
+                f"{str(memory)[:100]}..."
+                if len(str(memory)) > 100
+                else str(memory)
                 for memory in self.memories[-5:]
             ]
         )
@@ -196,10 +198,10 @@ class Agent(BaseModel):
                     **{
                         key: value
                         for key, value in plan.items()
-                        if (key != "location_id" and key != "related_event_id")
+                        if key not in ["location_id", "related_event_id"]
                     },
                     location=location,
-                    related_message=related_message,
+                    related_message=related_message
                 )
             )
 
@@ -361,8 +363,7 @@ class Agent(BaseModel):
 
     async def _get_memories_since(self, date: datetime):
         data = await (await get_database()).get_memories_since(date, str(self.id))
-        memories = [SingleMemory(**memory) for memory in data]
-        return memories
+        return [SingleMemory(**memory) for memory in data]
 
     async def _should_reflect(self) -> bool:
         """Check if the agent should reflect on their memories.
@@ -380,7 +381,7 @@ class Agent(BaseModel):
         )
 
         cumulative_importance = sum(
-            [memory.importance for memory in memories_since_last_reflection]
+            memory.importance for memory in memories_since_last_reflection
         )
 
         return cumulative_importance > 500
@@ -473,13 +474,14 @@ class Agent(BaseModel):
             include_worldwide=True,
         )
 
-        authorized_tools = [
+        return [
             tool
             for tool in all_tools
-            if (tool.name in self.authorized_tools or not tool.requires_authorization)
+            if (
+                tool.name in self.authorized_tools
+                or not tool.requires_authorization
+            )
         ]
-
-        return authorized_tools
 
     async def _move_to_location(
         self,
@@ -1017,18 +1019,18 @@ class Agent(BaseModel):
         ]
 
         current_action = (
-            "\n".join(plans_in_progress) if len(plans_in_progress) > 0 else "No actions"
+            "\n".join(plans_in_progress) if plans_in_progress else "No actions"
         )
 
         conversation_history = await get_conversation_history(self.id, self.context)
 
         plans_to_do = [
-            "📆 " + plan.description
+            f"📆 {plan.description}"
             for plan in self.plans
             if plan.status == PlanStatus.TODO
         ]
 
-        current_plans = "\n".join(plans_to_do) if len(plans_to_do) > 0 else "No plans"
+        current_plans = "\n".join(plans_to_do) if plans_to_do else "No plans"
 
         # Sort memories in reverse chronological order
         sorted_memories = sorted(
