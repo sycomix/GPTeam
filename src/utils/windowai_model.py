@@ -52,8 +52,7 @@ class ChatWindowAI(BaseChatModel):
         output_str = self._call(messages, stop=stop)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
-        result = ChatResult(generations=[generation])
-        return result
+        return ChatResult(generations=[generation])
 
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -95,7 +94,6 @@ class ChatWindowAI(BaseChatModel):
 
         response: ResponseDict = json.loads(message)
 
-        response_content = response["content"]
         response_request_id = response["request_id"]
 
         # sanity check that response corresponds to request
@@ -104,4 +102,5 @@ class ChatWindowAI(BaseChatModel):
                 f"Invalid request ID: {response_request_id}, expected: {request_id}"
             )
 
-        return response_content
+        else:
+            return response["content"]

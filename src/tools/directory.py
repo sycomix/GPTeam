@@ -15,17 +15,8 @@ def consult_directory(
     # first, craft the event object
     agents = tool_context.context.agents
 
-    directory = ""
-
-    for index, agent in enumerate(agents):
-        if agent["id"] == tool_context.agent_id:
-            continue
-
-        directory += (
-            f"{agent['full_name']}\n"
-            f"---------------------\n"
-            f"Bio: {agent['public_bio']}\n"
-            f"---------------------\n\n"
-        )
-
-    return directory
+    return "".join(
+        f"{agent['full_name']}\n---------------------\nBio: {agent['public_bio']}\n---------------------\n\n"
+        for agent in agents
+        if agent["id"] != tool_context.agent_id
+    )

@@ -150,9 +150,4 @@ async def get_relevant_memories(
     # get the top k memories, as a list of SingleMemory object
     top_memories = [memory.memory for memory in sorted_by_relevance[:k]]
 
-    # now sort the list based on the created_at field, with the oldest memories first
-    sorted_by_created_at = sorted(
-        top_memories, key=lambda x: x.created_at, reverse=False
-    )
-
-    return sorted_by_created_at
+    return sorted(top_memories, key=lambda x: x.created_at, reverse=False)

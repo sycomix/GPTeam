@@ -44,13 +44,10 @@ class Prompter(BaseModel):
         # Find all variables in the template string
         input_names = set(re.findall(r"{(\w+)}", self.template))
 
-        # Check that all variables are present in the inputs dictionary
-        missing_vars = input_names - set(self.inputs.keys())
-        if missing_vars:
+        if missing_vars := input_names - set(self.inputs.keys()):
             raise ValueError(f"Missing inputs: {missing_vars}")
 
     @property
     def prompt(self) -> list[BaseMessage]:
         final_string = self.template.format(**self.inputs)
-        messages = [SystemMessage(content=final_string)]
-        return messages
+        return [SystemMessage(content=final_string)]

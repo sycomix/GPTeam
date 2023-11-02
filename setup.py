@@ -35,12 +35,7 @@ def install_poetry():
 if __name__ == "__main__":
     os_type = platform.system()
 
-    if os.environ.get("CI") == "true":
-        # Skip user prompts when running in CI environment
-        prompt = False
-    else:
-        prompt = True
-
+    prompt = os.environ.get("CI") != "true"
     if is_poetry_installed():
         print("Poetry is already installed.")
     else:

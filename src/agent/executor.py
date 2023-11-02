@@ -106,10 +106,10 @@ class CustomOutputParser(AgentOutputParser):
 
             match = re.search(regex, retry, re.DOTALL)
 
-            if not match:
-                raise OutputParserException(
-                    f"Could not parse LLM output after retrying: \n`{retry}`. \nFirst attempt: \n`{retry}`"
-                )
+        if not match:
+            raise OutputParserException(
+                f"Could not parse LLM output after retrying: \n`{retry}`. \nFirst attempt: \n`{retry}`"
+            )
 
         action = match.group(1).strip()
         action_input = match.group(2)
@@ -199,12 +199,11 @@ class PlanExecutor(BaseModel):
 
         output_parser = CustomOutputParser(tools=tools)
 
-        executor = CustomSingleActionAgent(
+        return CustomSingleActionAgent(
             llm_chain=llm_chain,
             output_parser=output_parser,
             stop=["\nObservation:"],
         )
-        return executor
 
     def intermediate_steps_to_list(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -326,7 +325,6 @@ class PlanExecutor(BaseModel):
                 agent_id=self.agent_id,
             )[0]
 
-        # If failed to get tool, return a failure message
         except Exception as e:
             if not isinstance(e, ValueError) and not isinstance(e, IndexError):
                 raise e
@@ -347,16 +345,13 @@ class PlanExecutor(BaseModel):
 
             intermediate_steps.append((response, result))
 
-            executor_response = PlanExecutorResponse(
+            return PlanExecutorResponse(
                 status=PlanStatus.IN_PROGRESS,
                 output=result,
                 tool=None,
                 scratchpad=self.intermediate_steps_to_list(intermediate_steps),
                 tool_input=str(response.tool_input),
             )
-
-            return executor_response
-
         result = await tool.run(response.tool_input, tool_context)
 
         log_color = self.context.get_agent_color(self.agent_id)
@@ -366,7 +361,7 @@ class PlanExecutor(BaseModel):
         print_to_console(
             f"[{agent_name}] Action Response: ",
             log_color,
-            result[:280] + "..." if len(result) > 280 else str(result),
+            f"{result[:280]}..." if len(result) > 280 else str(result),
         )
 
         # Add the intermediate step to the list of intermediate steps
@@ -380,12 +375,10 @@ class PlanExecutor(BaseModel):
         else:
             intermediate_steps.append((response, result))
 
-        executor_response = PlanExecutorResponse(
+        return PlanExecutorResponse(
             status=PlanStatus.IN_PROGRESS,
             output=result,
             tool=tool,
             scratchpad=self.intermediate_steps_to_list(intermediate_steps),
             tool_input=str(response.tool_input),
         )
-
-        return executor_response

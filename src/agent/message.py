@@ -27,14 +27,11 @@ class AgentMessage(BaseModel):
 
     def get_event_message(self) -> str:
         if self.type == MessageEventSubtype.AGENT_TO_HUMAN:
-            event_message = f"{self.sender_name} asked the humans: '{self.content}'"
+            return f"{self.sender_name} asked the humans: '{self.content}'"
         elif self.recipient_id is None:
-            event_message = f"{self.sender_name} said to everyone in the {self.location.name}: '{self.content}'"
+            return f"{self.sender_name} said to everyone in the {self.location.name}: '{self.content}'"
         else:
-            event_message = (
-                f"{self.sender_name} said to {self.recipient_name}: '{self.content}'"
-            )
-        return event_message
+            return f"{self.sender_name} said to {self.recipient_name}: '{self.content}'"
 
     @classmethod
     def from_agent_input(

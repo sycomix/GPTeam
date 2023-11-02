@@ -27,7 +27,7 @@ def dict_factory(cursor: Cursor, row: Any) -> dict[str, Any]:
         else value
         for value in row
     ]
-    return {key: value for key, value in zip(fields, row)}
+    return dict(zip(fields, row))
 
 
 class SqliteDatabase(DatabaseProviderSingleton):
@@ -54,7 +54,7 @@ class SqliteDatabase(DatabaseProviderSingleton):
     async def get_by_field(
         self, table: Tables, field: str, value: Any, limit: int = None
     ) -> list[dict[str, Any]]:
-        if isinstance(value, list) or isinstance(value, dict):
+        if isinstance(value, (list, dict)):
             value = json.dumps(value)
         if limit is None:
             async with self.client.execute(
@@ -70,7 +70,7 @@ class SqliteDatabase(DatabaseProviderSingleton):
     async def get_by_field_contains(
         self, table: Tables, field: str, value: Any, limit: int = None
     ) -> list[dict[str, Any]]:
-        if isinstance(value, list) or isinstance(value, dict):
+        if isinstance(value, (list, dict)):
             value = json.dumps(value)
         if limit is None:
             async with self.client.execute(
@@ -87,34 +87,22 @@ class SqliteDatabase(DatabaseProviderSingleton):
     async def get_memories_since(
         self, timestamp: datetime, agent_id: str
     ) -> list[dict[str, Any]]:
-        async with self.client.execute(
-            f"SELECT * FROM Memories WHERE agent_id = ? AND created_at > ?",
-            (agent_id, timestamp),
-        ) as cursor:
+        async with self.client.execute("SELECT * FROM Memories WHERE agent_id = ? AND created_at > ?", (agent_id, timestamp)) as cursor:
             return await cursor.fetchall()
 
     async def get_should_reflect(self, agent_id: str) -> list[dict[str, Any]]:
-        async with self.client.execute(
-            f"SELECT * FROM Memories WHERE id = ? AND type = 'reflection' ORDER BY created_at DESC LIMIT 1",
-            (agent_id,),
-        ) as cursor:
+        async with self.client.execute("SELECT * FROM Memories WHERE id = ? AND type = 'reflection' ORDER BY created_at DESC LIMIT 1", (agent_id,)) as cursor:
             return await cursor.fetchall()
 
     # needs testing
     async def get_recent_events(
         self, world_id: str, limit: int
     ) -> list[dict[str, Any]]:
-        async with self.client.execute(
-            f"SELECT Events.*, Locations.world_id FROM Events INNER JOIN locations ON Events.location_id = locations.id WHERE Locations.world_id = ? ORDER BY Events.timestamp DESC LIMIT ?",
-            (world_id, limit),
-        ) as cursor:
+        async with self.client.execute("SELECT Events.*, Locations.world_id FROM Events INNER JOIN locations ON Events.location_id = locations.id WHERE Locations.world_id = ? ORDER BY Events.timestamp DESC LIMIT ?", (world_id, limit)) as cursor:
             return await cursor.fetchall()
 
     async def get_messages_by_discord_id(self, discord_id: str) -> list[dict[str, Any]]:
-        async with self.client.execute(
-            f"select * from events where metadata is not null and metadata->>'$.discord_id' = ?",
-            (discord_id,),
-        ) as cursor:
+        async with self.client.execute("select * from events where metadata is not null and metadata->>'$.discord_id' = ?", (discord_id,)) as cursor:
             return await cursor.fetchall()
 
     async def insert(
@@ -126,7 +114,7 @@ class SqliteDatabase(DatabaseProviderSingleton):
             if "id" not in item:
                 item["id"] = uuid.uuid4().hex
             for key, value in item.items():
-                if isinstance(value, list) or isinstance(value, dict):
+                if isinstance(value, (list, dict)):
                     item[key] = json.dumps(value)
             if upsert:
                 await self.client.execute(
@@ -142,10 +130,10 @@ class SqliteDatabase(DatabaseProviderSingleton):
 
     async def update(self, table: Tables, id: str, data: dict) -> None:
         for key, value in data.items():
-            if isinstance(value, list) or isinstance(value, dict):
+            if isinstance(value, (list, dict)):
                 data[key] = json.dumps(value)
         await self.client.execute(
-            f"UPDATE {table.value} SET {','.join([f'{key} = ?' for key in data.keys()])} WHERE id = ?",
+            f"UPDATE {table.value} SET {','.join([f'{key} = ?' for key in data])} WHERE id = ?",
             tuple(data.values()) + (id,),
         )
         await self.client.commit()
@@ -154,18 +142,16 @@ class SqliteDatabase(DatabaseProviderSingleton):
         await self.client.execute(f"DELETE FROM {table.value} WHERE id = ?", (id,))
         await self.client.commit()
         if table == Tables.Documents:
-            indexes = [
+            if indexes := [
                 i for i, x in enumerate(self.vector_db.documents) if x["id"] == id
-            ]
-            if len(indexes) > 0:
+            ]:
                 self.vector_db.remove_document(indexes[0])
 
     async def insert_document_with_embedding(self, data: dict, embedding_text) -> None:
         if "id" not in data:
             data["id"] = uuid.uuid4().hex
-        else:
-            if len(await self.get_by_id(Tables.Documents, data["id"])) > 0:
-                await self.delete(Tables.Documents, data["id"])
+        elif len(await self.get_by_id(Tables.Documents, data["id"])) > 0:
+            await self.delete(Tables.Documents, data["id"])
         await self.insert(Tables.Documents, data)
         data["embedding_text"] = embedding_text
         self.vector_db.add_document(data)
@@ -175,10 +161,9 @@ class SqliteDatabase(DatabaseProviderSingleton):
     ) -> None:
         if len(self.vector_db.documents) == 0:
             return []
-        docs = self.vector_db.query(
+        return self.vector_db.query(
             embedding_text, top_k=limit, return_similarities=False
         )
-        return docs
 
     async def close(self) -> None:
         await self.client.close()
@@ -195,8 +180,6 @@ class SqliteDatabase(DatabaseProviderSingleton):
         except:
             cls.documents = []
             cls.vector_db = HyperDB(cls.documents, key="embedding_text")
-            pass
-
         await cls.client.execute(
             """
         CREATE TABLE IF NOT EXISTS worlds (
